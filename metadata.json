@@ -1,0 +1,5 @@
+{
+  "name": "Powerset Construction Lab",
+  "description": "An interactive tool to experiment with the powerset construction for converting NFAs to DFAs, as introduced in Rabin and Scott's subset construction theorem.",
+  "requestFramePermissions": []
+}
