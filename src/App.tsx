@@ -197,27 +197,27 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#E4E3E0] text-[#141414] font-sans selection:bg-[#141414] selection:text-[#E4E3E0]">
       {/* Header */}
-      <header className="border-b border-[#141414] p-6 flex justify-between items-center">
+      <header className="border-b border-[#141414] p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight uppercase">Powerset Construction Lab</h1>
-          <p className="text-xs opacity-60 font-mono mt-1">NFA to DFA Conversion • Rabin-Scott Algorithm</p>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight uppercase">Powerset Construction Lab</h1>
+          <p className="text-[10px] md:text-xs opacity-60 font-mono mt-1">NFA to DFA Conversion • Rabin-Scott Algorithm</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <button 
             onClick={() => setActiveTab('edit')}
-            className={`px-4 py-2 text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'edit' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
+            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'edit' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
           >
             1. Define NFA
           </button>
           <button 
             onClick={() => { setActiveTab('construct'); resetConstruction(); }}
-            className={`px-4 py-2 text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'construct' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
+            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'construct' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
           >
             2. Construct
           </button>
           <button 
             onClick={() => { setActiveTab('result'); runToCompletion(); }}
-            className={`px-4 py-2 text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'result' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
+            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'result' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
           >
             3. Final DFA
           </button>
