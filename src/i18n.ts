@@ -1,0 +1,107 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+
+const resources = {
+  en: {
+    translation: {
+      "app_title": "Powerset Construction Lab",
+      "app_subtitle": "NFA to DFA Conversion • Rabin-Scott Algorithm",
+      "tab_define": "1. Define NFA",
+      "tab_construct": "2. Construct",
+      "tab_final": "3. Final DFA",
+      "states_alphabet": "States & Alphabet",
+      "add_state": "Add State",
+      "states": "States",
+      "alphabet": "Alphabet",
+      "add_symbol": "Add Symbol",
+      "enter_symbol": "Enter symbol (e.g. 'c')",
+      "add": "Add",
+      "transitions": "Transitions",
+      "start": "Start",
+      "final": "Final",
+      "construction_status": "Construction Status",
+      "next_step": "Next Step",
+      "selecting": "Selecting...",
+      "finish": "Finish",
+      "queue": "Queue (Unprocessed)",
+      "queue_empty": "Queue empty",
+      "current_action": "Current Action",
+      "from": "From",
+      "with_symbol": "with symbol",
+      "select_target_states": "Select the target NFA states:",
+      "check_selection": "Check Selection",
+      "new_state": "✨ New state!",
+      "dfa_states": "DFA States",
+      "dfa_summary": "DFA Summary",
+      "total_states": "Total States",
+      "theory_note_title": "Theory Note",
+      "theory_note_text": "The powerset construction shows that every NFA has an equivalent DFA. However, the number of states in the DFA can be up to 2ⁿ where n is the number of NFA states.",
+      "visualization": "Visualization",
+      "nfa_input": "NFA (Input)",
+      "dfa_construction": "DFA (Construction)",
+      "correct_feedback": "Correct! Transition added.",
+      "incorrect_feedback": "Incorrect selection. Try again.",
+      "reset": "Reset",
+      "empty_set": "∅",
+      "language": "Language"
+    }
+  },
+  de: {
+    translation: {
+      "app_title": "Potenzmengenkonstruktionslabor",
+      "app_subtitle": "NEA zu DEA Konvertierung • Rabin-Scott Algorithmus",
+      "tab_define": "1. NEA Definieren",
+      "tab_construct": "2. Konstruieren",
+      "tab_final": "3. Finaler DEA",
+      "states_alphabet": "Zustände & Alphabet",
+      "add_state": "Zustand hinzufügen",
+      "states": "Zustände",
+      "alphabet": "Alphabet",
+      "add_symbol": "Symbol hinzufügen",
+      "enter_symbol": "Symbol eingeben (z.B. 'c')",
+      "add": "Hinzufügen",
+      "transitions": "Übergänge",
+      "start": "Start",
+      "final": "Endzustand",
+      "construction_status": "Konstruktionsstatus",
+      "next_step": "Nächster Schritt",
+      "selecting": "Auswählen...",
+      "finish": "Fertigstellen",
+      "queue": "Warteschlange (Unverarbeitet)",
+      "queue_empty": "Warteschlange leer",
+      "current_action": "Aktuelle Aktion",
+      "from": "Von",
+      "with_symbol": "mit Symbol",
+      "select_target_states": "Wählen Sie die Ziel-NEA-Zustände aus:",
+      "check_selection": "Auswahl prüfen",
+      "new_state": "✨ Neuer Zustand!",
+      "dfa_states": "DEA Zustände",
+      "dfa_summary": "DEA Zusammenfassung",
+      "total_states": "Gesamtanzahl Zustände",
+      "theory_note_title": "Theorie-Hinweis",
+      "theory_note_text": "Die Potenzmengenkonstruktion zeigt, dass jeder NEA einen äquivalenten DEA besitzt. Die Anzahl der Zustände im DEA kann jedoch bis zu 2ⁿ betragen, wobei n die Anzahl der NEA-Zustände ist.",
+      "visualization": "Visualisierung",
+      "nfa_input": "NEA (Eingabe)",
+      "dfa_construction": "DEA (Konstruktion)",
+      "correct_feedback": "Richtig! Übergang hinzugefügt.",
+      "incorrect_feedback": "Falsche Auswahl. Versuchen Sie es erneut.",
+      "reset": "Zurücksetzen",
+      "empty_set": "∅",
+      "language": "Sprache"
+    }
+  }
+};
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: 'en',
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+
+export default i18n;

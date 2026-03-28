@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@theme {
+  /* Primary Colors */
+  --color-th-rot: #e4003a;
+  --color-th-black: #000000;
+  --color-th-white: #ffffff;
+
+  /* Secondary Colors */
+  --color-th-grau: #4b5459;
+  --color-th-dunkelblau: #004261;
+  --color-th-violett: #751248;
+  --color-th-mint: #7cc5ad;
+  --color-th-blaugrau: #719cbf;
+  --color-th-flieder: #bda2c1;
+  --color-th-apfelgruen: #bccf00;
+  --color-th-goldgelb: #fbbc33;
+  --color-th-sand: #d4c1b2;
+}

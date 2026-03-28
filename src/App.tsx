@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Trash2, Play, ChevronRight, RotateCcw, Info, Settings2, Download, Upload, Sigma } from 'lucide-react';
+import { Plus, Trash2, Play, ChevronRight, RotateCcw, Info, Settings2, Download, Upload, Sigma, Languages } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { NFA, DFA, DFAState, DFATransition, StateId, Symbol } from './types';
 import { powersetConstruction, getDFAStateId, getNextNFAStates, isFinalDFAState } from './lib/powerset';
 import AutomatonGraph from './components/AutomatonGraph';
@@ -23,6 +24,7 @@ const DEFAULT_NFA: NFA = {
 };
 
 export default function App() {
+  const { t, i18n } = useTranslation();
   const [nfa, setNfa] = useState<NFA>(DEFAULT_NFA);
   const [activeTab, setActiveTab] = useState<'edit' | 'construct' | 'result'>('edit');
   const [showAddSymbolInput, setShowAddSymbolInput] = useState(false);
@@ -107,7 +109,7 @@ export default function App() {
     const isCorrect = JSON.stringify(sortedSelected) === JSON.stringify(sortedTarget);
 
     if (isCorrect) {
-      setFeedback({ message: 'Correct! Transition added.', type: 'success' });
+      setFeedback({ message: t('correct_feedback'), type: 'success' });
       
       // Update transitions
       setDfaTransitions(prev => [...prev, { 
@@ -129,7 +131,7 @@ export default function App() {
 
       setConstructionPhase('idle');
     } else {
-      setFeedback({ message: 'Incorrect selection. Try again.', type: 'error' });
+      setFeedback({ message: t('incorrect_feedback'), type: 'error' });
     }
   };
 
@@ -228,31 +230,45 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#E4E3E0] text-[#141414] font-sans selection:bg-[#141414] selection:text-[#E4E3E0]">
+    <div className="min-h-screen bg-th-white text-th-black font-sans selection:bg-th-rot selection:text-th-white">
       {/* Header */}
-      <header className="border-b border-[#141414] p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight uppercase">Powerset Construction Lab</h1>
-          <p className="text-[10px] md:text-xs opacity-60 font-mono mt-1">NFA to DFA Conversion • Rabin-Scott Algorithm</p>
+      <header className="border-b border-th-black p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-th-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight uppercase text-th-rot">{t('app_title')}</h1>
+            <p className="text-[10px] md:text-xs opacity-60 font-mono mt-1">{t('app_subtitle')}</p>
+          </div>
+          
+          <div className="flex items-center gap-2 bg-th-sand/10 border border-th-sand/30 px-2 py-1 rounded">
+            <Languages size={14} className="text-th-dunkelblau" />
+            <select 
+              value={i18n.language} 
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              className="bg-transparent text-[10px] font-bold uppercase focus:outline-none cursor-pointer"
+            >
+              <option value="en">EN</option>
+              <option value="de">DE</option>
+            </select>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <button 
             onClick={() => setActiveTab('edit')}
-            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'edit' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
+            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-th-black transition-colors ${activeTab === 'edit' ? 'bg-th-rot text-th-white border-th-rot' : 'hover:bg-th-rot hover:text-th-white hover:border-th-rot'}`}
           >
-            1. Define NFA
+            {t('tab_define')}
           </button>
           <button 
             onClick={() => { setActiveTab('construct'); resetConstruction(); }}
-            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'construct' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
+            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-th-black transition-colors ${activeTab === 'construct' ? 'bg-th-rot text-th-white border-th-rot' : 'hover:bg-th-rot hover:text-th-white hover:border-th-rot'}`}
           >
-            2. Construct
+            {t('tab_construct')}
           </button>
           <button 
             onClick={() => { setActiveTab('result'); runToCompletion(); }}
-            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-[#141414] transition-colors ${activeTab === 'result' ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414] hover:text-[#E4E3E0]'}`}
+            className={`flex-1 md:flex-none px-3 md:px-4 py-2 text-[10px] md:text-xs font-bold uppercase border border-th-black transition-colors ${activeTab === 'result' ? 'bg-th-rot text-th-white border-th-rot' : 'hover:bg-th-rot hover:text-th-white hover:border-th-rot'}`}
           >
-            3. Final DFA
+            {t('tab_final')}
           </button>
         </div>
       </header>
@@ -262,22 +278,22 @@ export default function App() {
         <div className="lg:col-span-4 space-y-6">
           {activeTab === 'edit' && (
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-              <section className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
+              <section className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-serif italic text-lg">States & Alphabet</h2>
+                  <h2 className="font-serif italic text-lg text-th-dunkelblau">{t('states_alphabet')}</h2>
                   <div className="flex gap-2">
-                    <button onClick={addState} className="p-1 hover:bg-gray-100 rounded border border-gray-200" title="Add State"><Plus size={16} /></button>
+                    <button onClick={addState} className="p-1 hover:bg-th-sand/20 rounded border border-th-sand/30" title={t('add_state')}><Plus size={16} /></button>
                   </div>
                 </div>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-[10px] uppercase font-bold opacity-50 block mb-2">States</label>
+                    <label className="text-[10px] uppercase font-bold opacity-50 block mb-2">{t('states')}</label>
                     <div className="flex flex-wrap gap-2">
                       {nfa.states.map(s => (
-                        <div key={s} className="flex items-center gap-1 bg-gray-50 border border-gray-200 px-2 py-1 rounded text-xs">
+                        <div key={s} className="flex items-center gap-1 bg-th-sand/10 border border-th-sand/30 px-2 py-1 rounded text-xs">
                           <span>{s}</span>
-                          <button onClick={() => removeState(s)} className="text-red-500 hover:text-red-700"><Trash2 size={12} /></button>
+                          <button onClick={() => removeState(s)} className="text-th-rot hover:text-th-rot/80"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -285,15 +301,15 @@ export default function App() {
                   
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-[10px] uppercase font-bold opacity-50 block">Alphabet</label>
+                      <label className="text-[10px] uppercase font-bold opacity-50 block">{t('alphabet')}</label>
                       <button 
                         onClick={() => setShowAddSymbolInput(!showAddSymbolInput)} 
-                        className="p-1 hover:bg-gray-100 rounded border border-gray-200 flex items-center justify-center" 
-                        title="Add Symbol"
+                        className="p-1 hover:bg-th-sand/20 rounded border border-th-sand/30 flex items-center justify-center" 
+                        title={t('add_symbol')}
                       >
                         <div className="relative flex items-center justify-center w-4 h-4">
                           <Sigma size={14} />
-                          <Plus size={8} className="absolute -top-1 -right-1 text-[#141414] font-bold" />
+                          <Plus size={8} className="absolute -top-1 -right-1 text-th-black font-bold" />
                         </div>
                       </button>
                     </div>
@@ -311,16 +327,16 @@ export default function App() {
                               type="text" 
                               value={newSymbolValue}
                               onChange={(e) => setNewSymbolValue(e.target.value)}
-                              placeholder="Enter symbol (e.g. 'c')"
-                              className="flex-1 text-xs px-2 py-1 border border-gray-200 rounded focus:outline-none focus:border-[#141414]"
+                              placeholder={t('enter_symbol')}
+                              className="flex-1 text-xs px-2 py-1 border border-th-sand/30 rounded focus:outline-none focus:border-th-rot"
                               onKeyDown={(e) => e.key === 'Enter' && addSymbol()}
                               autoFocus
                             />
                             <button 
                               onClick={addSymbol}
-                              className="px-3 py-1 bg-[#141414] text-[#E4E3E0] text-[10px] font-bold uppercase rounded"
+                              className="px-3 py-1 bg-th-rot text-th-white text-[10px] font-bold uppercase rounded"
                             >
-                              Add
+                              {t('add')}
                             </button>
                           </div>
                         </motion.div>
@@ -329,9 +345,9 @@ export default function App() {
 
                     <div className="flex flex-wrap gap-2">
                       {nfa.alphabet.map(s => (
-                        <div key={s} className="flex items-center gap-1 bg-gray-50 border border-gray-200 px-2 py-1 rounded text-xs font-mono">
+                        <div key={s} className="flex items-center gap-1 bg-th-sand/10 border border-th-sand/30 px-2 py-1 rounded text-xs font-mono">
                           <span>{s}</span>
-                          <button onClick={() => removeSymbol(s)} className="text-red-500 hover:text-red-700 ml-1"><Trash2 size={12} /></button>
+                          <button onClick={() => removeSymbol(s)} className="text-th-rot hover:text-th-rot/80 ml-1"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -339,32 +355,32 @@ export default function App() {
                 </div>
               </section>
 
-              <section className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                <h2 className="font-serif italic text-lg mb-4">Transitions</h2>
+              <section className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="font-serif italic text-lg mb-4 text-th-dunkelblau">{t('transitions')}</h2>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs border-collapse">
                     <thead>
                       <tr>
-                        <th className="border p-2 bg-gray-50">δ</th>
+                        <th className="border border-th-sand/30 p-2 bg-th-sand/5">δ</th>
                         {nfa.alphabet.map(sym => (
-                          <th key={sym} className="border p-2 bg-gray-50 font-mono">{sym}</th>
+                          <th key={sym} className="border border-th-sand/30 p-2 bg-th-sand/5 font-mono">{sym}</th>
                         ))}
-                        <th className="border p-2 bg-gray-50">Start</th>
-                        <th className="border p-2 bg-gray-50">Final</th>
+                        <th className="border border-th-sand/30 p-2 bg-th-sand/5">{t('start')}</th>
+                        <th className="border border-th-sand/30 p-2 bg-th-sand/5">{t('final')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {nfa.states.map(from => (
                         <tr key={from}>
-                          <td className="border p-2 font-bold">{from}</td>
+                          <td className="border border-th-sand/30 p-2 font-bold bg-th-sand/5">{from}</td>
                           {nfa.alphabet.map(sym => (
-                            <td key={sym} className="border p-1">
+                            <td key={sym} className="border border-th-sand/30 p-1">
                               <div className="flex flex-wrap gap-1">
                                 {nfa.states.map(to => (
                                   <button
                                     key={to}
                                     onClick={() => toggleTransition(from, sym, to)}
-                                    className={`px-1 rounded border ${nfa.transitions[from]?.[sym]?.includes(to) ? 'bg-[#141414] text-white border-[#141414]' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'}`}
+                                    className={`px-1 rounded border transition-colors ${nfa.transitions[from]?.[sym]?.includes(to) ? 'bg-th-rot text-th-white border-th-rot' : 'bg-th-white text-th-grau border-th-sand/30 hover:border-th-rot'}`}
                                   >
                                     {to}
                                   </button>
@@ -372,9 +388,10 @@ export default function App() {
                               </div>
                             </td>
                           ))}
-                          <td className="border p-2 text-center">
+                          <td className="border border-th-sand/30 p-2 text-center">
                             <input 
                               type="checkbox" 
+                              className="accent-th-rot"
                               checked={nfa.startStates.includes(from)}
                               onChange={() => {
                                 setNfa(prev => ({
@@ -386,9 +403,10 @@ export default function App() {
                               }}
                             />
                           </td>
-                          <td className="border p-2 text-center">
+                          <td className="border border-th-sand/30 p-2 text-center">
                             <input 
                               type="checkbox" 
+                              className="accent-th-rot"
                               checked={nfa.finalStates.includes(from)}
                               onChange={() => {
                                 setNfa(prev => ({
@@ -411,28 +429,30 @@ export default function App() {
 
           {activeTab === 'construct' && (
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-              <section className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                <h2 className="font-serif italic text-lg mb-4">Construction Status</h2>
+              <section className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="font-serif italic text-lg mb-4 text-th-dunkelblau">{t('construction_status')}</h2>
                 
                 <div className="space-y-4">
                   <div className="flex gap-2">
                     <button 
                       onClick={stepConstruction}
                       disabled={queue.length === 0 || constructionPhase === 'selecting'}
-                      className="flex-1 bg-[#141414] text-white py-2 px-4 text-xs font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30"
+                      className="flex-1 bg-th-rot text-th-white py-2 px-4 text-xs font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30 hover:bg-th-rot/90 transition-colors"
                     >
-                      <ChevronRight size={16} /> {constructionPhase === 'selecting' ? 'Selecting...' : 'Next Step'}
+                      <ChevronRight size={16} /> {constructionPhase === 'selecting' ? t('selecting') : t('next_step')}
                     </button>
                     <button 
                       onClick={runToCompletion}
                       disabled={queue.length === 0 || constructionPhase === 'selecting'}
-                      className="bg-white border border-[#141414] py-2 px-4 text-xs font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30"
+                      className="bg-th-white border border-th-black py-2 px-4 text-xs font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30 hover:bg-th-sand/10 transition-colors"
+                      title={t('finish')}
                     >
-                      <Play size={16} /> Finish
+                      <Play size={16} />
                     </button>
                     <button 
                       onClick={resetConstruction}
-                      className="bg-white border border-[#141414] py-2 px-4 text-xs font-bold uppercase flex items-center justify-center"
+                      className="bg-th-white border border-th-black py-2 px-4 text-xs font-bold uppercase flex items-center justify-center hover:bg-th-sand/10 transition-colors"
+                      title={t('reset')}
                     >
                       <RotateCcw size={16} />
                     </button>
@@ -442,35 +462,35 @@ export default function App() {
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }} 
                       animate={{ opacity: 1, y: 0 }}
-                      className={`p-3 text-xs font-bold border ${feedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}
+                      className={`p-3 text-xs font-bold border ${feedback.type === 'success' ? 'bg-th-mint/20 border-th-mint text-th-grau' : 'bg-th-rot/10 border-th-rot text-th-rot'}`}
                     >
                       {feedback.message}
                     </motion.div>
                   )}
 
-                  <div className="border-t border-dashed border-gray-200 pt-4">
-                    <label className="text-[10px] uppercase font-bold opacity-50 block mb-2">Queue (Unprocessed)</label>
+                  <div className="border-t border-dashed border-th-sand/30 pt-4">
+                    <label className="text-[10px] uppercase font-bold opacity-50 block mb-2">{t('queue')}</label>
                     <div className="flex flex-wrap gap-2">
                       {queue.length > 0 ? queue.map((s, i) => (
-                        <span key={i} className={`px-2 py-1 rounded text-xs font-mono border ${i === 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'}`}>
+                        <span key={i} className={`px-2 py-1 rounded text-xs font-mono border ${i === 0 ? 'bg-th-goldgelb/20 border-th-goldgelb' : 'bg-th-sand/10 border-th-sand/30'}`}>
                           {s}
                         </span>
-                      )) : <span className="text-xs italic text-gray-400">Queue empty</span>}
+                      )) : <span className="text-xs italic text-th-grau/50">{t('queue_empty')}</span>}
                     </div>
                   </div>
 
                   {currentStep && (
-                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg space-y-4 animate-in fade-in slide-in-from-left-2">
+                    <div className="bg-th-blaugrau/10 border border-th-blaugrau/20 p-4 rounded-lg space-y-4 animate-in fade-in slide-in-from-left-2">
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Current Action</p>
+                        <p className="text-xs font-bold text-th-dunkelblau uppercase tracking-wider">{t('current_action')}</p>
                         <p className="text-sm">
-                          From <span className="font-mono font-bold">{currentStep.stateId}</span> with symbol <span className="font-mono font-bold">'{currentStep.symbol}'</span>:
+                          {t('from')} <span className="font-mono font-bold">{currentStep.stateId}</span> {t('with_symbol')} <span className="font-mono font-bold">'{currentStep.symbol}'</span>:
                         </p>
                       </div>
 
                       {constructionPhase === 'selecting' ? (
-                        <div className="space-y-3 bg-white p-3 border border-blue-200 rounded">
-                          <p className="text-[10px] font-bold uppercase opacity-60">Select the target NFA states:</p>
+                        <div className="space-y-3 bg-th-white p-3 border border-th-blaugrau/20 rounded">
+                          <p className="text-[10px] font-bold uppercase opacity-60">{t('select_target_states')}</p>
                           <div className="flex flex-wrap gap-2">
                             {nfa.states.map(stateId => (
                               <button
@@ -484,8 +504,8 @@ export default function App() {
                                 }}
                                 className={`px-3 py-1 rounded text-xs font-mono border transition-all ${
                                   userSelectedStates.includes(stateId)
-                                    ? 'bg-[#141414] text-white border-[#141414]'
-                                    : 'bg-white text-[#141414] border-gray-200 hover:border-[#141414]'
+                                    ? 'bg-th-rot text-th-white border-th-rot'
+                                    : 'bg-th-white text-th-black border-th-sand/30 hover:border-th-rot'
                                 }`}
                               >
                                 {stateId}
@@ -494,18 +514,18 @@ export default function App() {
                           </div>
                           <button
                             onClick={checkSelection}
-                            className="w-full bg-blue-600 text-white py-2 text-[10px] font-bold uppercase rounded hover:bg-blue-700 transition-colors"
+                            className="w-full bg-th-dunkelblau text-th-white py-2 text-[10px] font-bold uppercase rounded hover:bg-th-dunkelblau/90 transition-colors"
                           >
-                            Check Selection
+                            {t('check_selection')}
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-xs">
-                          <div className="bg-white px-2 py-1 rounded border border-blue-200 font-mono">
-                            ∪ δ(q, {currentStep.symbol}) = {currentStep.nextDFAId || '∅'}
+                          <div className="bg-th-white px-2 py-1 rounded border border-th-blaugrau/20 font-mono">
+                            ∪ δ(q, {currentStep.symbol}) = {currentStep.nextDFAId || t('empty_set')}
                           </div>
                           {currentStep.isNew && (
-                            <span className="text-[10px] text-green-600 font-bold uppercase">✨ New state!</span>
+                            <span className="text-[10px] text-th-apfelgruen font-bold uppercase">{t('new_state')}</span>
                           )}
                         </div>
                       )}
@@ -514,15 +534,15 @@ export default function App() {
                 </div>
               </section>
 
-              <section className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                <h2 className="font-serif italic text-lg mb-4">DFA States</h2>
+              <section className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="font-serif italic text-lg mb-4 text-th-dunkelblau">{t('dfa_states')}</h2>
                 <div className="space-y-2">
                   {dfaStates.map(s => (
-                    <div key={s.id} className={`p-2 border rounded flex justify-between items-center ${processedStates.has(s.id) ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-[#141414]'}`}>
+                    <div key={s.id} className={`p-2 border rounded flex justify-between items-center ${processedStates.has(s.id) ? 'bg-th-sand/10 border-th-sand/30 opacity-60' : 'bg-th-white border-th-black'}`}>
                       <span className="text-xs font-mono font-bold">{s.id}</span>
                       <div className="flex gap-1">
-                        {s.isStart && <span className="text-[8px] bg-blue-100 text-blue-700 px-1 rounded font-bold uppercase">Start</span>}
-                        {s.isFinal && <span className="text-[8px] bg-green-100 text-green-700 px-1 rounded font-bold uppercase">Final</span>}
+                        {s.isStart && <span className="text-[8px] bg-th-blaugrau/20 text-th-dunkelblau px-1 rounded font-bold uppercase">{t('start')}</span>}
+                        {s.isFinal && <span className="text-[8px] bg-th-mint/20 text-th-grau px-1 rounded font-bold uppercase border border-th-mint/30">{t('final')}</span>}
                       </div>
                     </div>
                   ))}
@@ -533,29 +553,28 @@ export default function App() {
 
           {activeTab === 'result' && (
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-              <section className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                <h2 className="font-serif italic text-lg mb-4">DFA Summary</h2>
+              <section className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="font-serif italic text-lg mb-4 text-th-dunkelblau">{t('dfa_summary')}</h2>
                 <div className="space-y-4 text-xs">
                   <div className="flex justify-between">
-                    <span className="opacity-50 uppercase font-bold">Total States</span>
+                    <span className="opacity-50 uppercase font-bold">{t('total_states')}</span>
                     <span className="font-mono">{dfaStates.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="opacity-50 uppercase font-bold">Transitions</span>
+                    <span className="opacity-50 uppercase font-bold">{t('transitions')}</span>
                     <span className="font-mono">{dfaTransitions.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="opacity-50 uppercase font-bold">Final States</span>
+                    <span className="opacity-50 uppercase font-bold">{t('final')} {t('states')}</span>
                     <span className="font-mono">{dfaStates.filter(s => s.isFinal).length}</span>
                   </div>
                 </div>
               </section>
               
-              <div className="bg-[#141414] text-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-                <h2 className="font-serif italic text-lg mb-4 text-[#E4E3E0]">Theory Note</h2>
+              <div className="bg-th-dunkelblau text-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="font-serif italic text-lg mb-4 text-th-sand">{t('theory_note_title')}</h2>
                 <p className="text-xs leading-relaxed opacity-80">
-                  The powerset construction shows that every NFA has an equivalent DFA. 
-                  However, the number of states in the DFA can be up to 2<sup>n</sup> where n is the number of NFA states.
+                  {t('theory_note_text')}
                 </p>
               </div>
             </motion.div>
@@ -564,19 +583,19 @@ export default function App() {
 
         {/* Right Column: Visualization */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] min-h-[700px] flex flex-col">
+          <div className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] min-h-[700px] flex flex-col">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="font-serif italic text-xl">Visualization</h2>
+              <h2 className="font-serif italic text-xl text-th-dunkelblau">{t('visualization')}</h2>
               <div className="flex items-center gap-4 text-[10px] font-bold uppercase opacity-50">
-                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-100 border border-blue-600"></div> Start</div>
-                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full border-2 border-gray-800"></div> Final</div>
+                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-th-blaugrau/20 border border-th-dunkelblau"></div> {t('start')}</div>
+                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full border-2 border-th-black"></div> {t('final')}</div>
               </div>
             </div>
 
             <div className="flex-1 flex flex-col gap-6 min-w-0 overflow-hidden">
               <div className="flex-1 flex flex-col min-w-0 space-y-2">
-                <h3 className="text-[10px] uppercase font-bold opacity-50">NFA (Input)</h3>
-                <div className="flex-1 min-h-0 min-w-0">
+                <h3 className="text-[10px] uppercase font-bold opacity-50 text-th-dunkelblau">{t('nfa_input')}</h3>
+                <div className="flex-1 min-h-0 min-w-0 bg-th-white border border-th-sand/20 rounded">
                   <AutomatonGraph 
                     states={nfa.states}
                     transitions={Object.entries(nfa.transitions).flatMap(([from, syms]) => 
@@ -607,8 +626,8 @@ export default function App() {
               </div>
 
               <div className="flex-1 flex flex-col min-w-0 space-y-2">
-                <h3 className="text-[10px] uppercase font-bold opacity-50">DFA (Construction)</h3>
-                <div className="flex-1 min-h-0 min-w-0">
+                <h3 className="text-[10px] uppercase font-bold opacity-50 text-th-dunkelblau">{t('dfa_construction')}</h3>
+                <div className="flex-1 min-h-0 min-w-0 bg-th-white border border-th-sand/20 rounded">
                   <AutomatonGraph 
                     states={dfaStates.map(s => s.id)}
                     transitions={dfaTransitions.map(t => ({ from: t.from, to: t.to, label: t.symbol }))}
