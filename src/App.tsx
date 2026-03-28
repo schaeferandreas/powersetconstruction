@@ -33,6 +33,9 @@ export default function App() {
   const [dfaTransitions, setDfaTransitions] = useState<DFATransition[]>([]);
   const [processedStates, setProcessedStates] = useState<Set<string>>(new Set());
   const [queue, setQueue] = useState<string[]>([]);
+  const [userSelectedStates, setUserSelectedStates] = useState<StateId[]>([]);
+  const [constructionPhase, setConstructionPhase] = useState<'idle' | 'selecting'>('idle');
+  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [currentStep, setCurrentStep] = useState<{
     stateId: string;
     symbol: Symbol;
@@ -55,6 +58,9 @@ export default function App() {
     setProcessedStates(new Set());
     setQueue([startDFAId]);
     setCurrentStep(null);
+    setUserSelectedStates([]);
+    setConstructionPhase('idle');
+    setFeedback(null);
   };
 
   const stepConstruction = () => {
@@ -74,20 +80,6 @@ export default function App() {
       const nextDFAId = getDFAStateId(nextNFAStates);
       const isNew = !dfaStates.some(s => s.id === nextDFAId);
 
-      // Update transitions
-      setDfaTransitions(prev => [...prev, { from: currentId, symbol: nextSymbol, to: nextDFAId }]);
-      
-      // Update states if new
-      if (isNew) {
-        setDfaStates(prev => [...prev, {
-          id: nextDFAId,
-          nfaStates: nextNFAStates,
-          isStart: false,
-          isFinal: isFinalDFAState(nextNFAStates, nfa.finalStates),
-        }]);
-        setQueue(prev => [...prev, nextDFAId]);
-      }
-
       setCurrentStep({
         stateId: currentId,
         symbol: nextSymbol,
@@ -95,11 +87,49 @@ export default function App() {
         nextDFAId,
         isNew
       });
+      setConstructionPhase('selecting');
+      setUserSelectedStates([]);
+      setFeedback(null);
     } else {
       // All symbols processed for this state
       setProcessedStates(prev => new Set(prev).add(currentId));
       setQueue(prev => prev.slice(1));
       setCurrentStep(null);
+    }
+  };
+
+  const checkSelection = () => {
+    if (!currentStep) return;
+
+    const sortedSelected = [...userSelectedStates].sort();
+    const sortedTarget = [...currentStep.nextNFAStates].sort();
+    
+    const isCorrect = JSON.stringify(sortedSelected) === JSON.stringify(sortedTarget);
+
+    if (isCorrect) {
+      setFeedback({ message: 'Correct! Transition added.', type: 'success' });
+      
+      // Update transitions
+      setDfaTransitions(prev => [...prev, { 
+        from: currentStep.stateId, 
+        symbol: currentStep.symbol, 
+        to: currentStep.nextDFAId 
+      }]);
+      
+      // Update states if new
+      if (currentStep.isNew) {
+        setDfaStates(prev => [...prev, {
+          id: currentStep.nextDFAId,
+          nfaStates: currentStep.nextNFAStates,
+          isStart: false,
+          isFinal: isFinalDFAState(currentStep.nextNFAStates, nfa.finalStates),
+        }]);
+        setQueue(prev => [...prev, currentStep.nextDFAId]);
+      }
+
+      setConstructionPhase('idle');
+    } else {
+      setFeedback({ message: 'Incorrect selection. Try again.', type: 'error' });
     }
   };
 
@@ -110,6 +140,9 @@ export default function App() {
     setProcessedStates(new Set(result.states.map(s => s.id)));
     setQueue([]);
     setCurrentStep(null);
+    setConstructionPhase('idle');
+    setFeedback(null);
+    setUserSelectedStates([]);
   };
 
   // NFA Editor helpers
@@ -385,14 +418,14 @@ export default function App() {
                   <div className="flex gap-2">
                     <button 
                       onClick={stepConstruction}
-                      disabled={queue.length === 0}
+                      disabled={queue.length === 0 || constructionPhase === 'selecting'}
                       className="flex-1 bg-[#141414] text-white py-2 px-4 text-xs font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30"
                     >
-                      <ChevronRight size={16} /> Next Step
+                      <ChevronRight size={16} /> {constructionPhase === 'selecting' ? 'Selecting...' : 'Next Step'}
                     </button>
                     <button 
                       onClick={runToCompletion}
-                      disabled={queue.length === 0}
+                      disabled={queue.length === 0 || constructionPhase === 'selecting'}
                       className="bg-white border border-[#141414] py-2 px-4 text-xs font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30"
                     >
                       <Play size={16} /> Finish
@@ -404,6 +437,16 @@ export default function App() {
                       <RotateCcw size={16} />
                     </button>
                   </div>
+
+                  {feedback && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }} 
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`p-3 text-xs font-bold border ${feedback.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}
+                    >
+                      {feedback.message}
+                    </motion.div>
+                  )}
 
                   <div className="border-t border-dashed border-gray-200 pt-4">
                     <label className="text-[10px] uppercase font-bold opacity-50 block mb-2">Queue (Unprocessed)</label>
@@ -417,18 +460,54 @@ export default function App() {
                   </div>
 
                   {currentStep && (
-                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg space-y-2 animate-in fade-in slide-in-from-left-2">
-                      <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Current Action</p>
-                      <p className="text-sm">
-                        From <span className="font-mono font-bold">{currentStep.stateId}</span> with symbol <span className="font-mono font-bold">'{currentStep.symbol}'</span>:
-                      </p>
-                      <div className="flex items-center gap-2 text-xs">
-                        <div className="bg-white px-2 py-1 rounded border border-blue-200">
-                          ∪ δ(q, {currentStep.symbol}) = {currentStep.nextDFAId}
-                        </div>
+                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg space-y-4 animate-in fade-in slide-in-from-left-2">
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Current Action</p>
+                        <p className="text-sm">
+                          From <span className="font-mono font-bold">{currentStep.stateId}</span> with symbol <span className="font-mono font-bold">'{currentStep.symbol}'</span>:
+                        </p>
                       </div>
-                      {currentStep.isNew && (
-                        <p className="text-[10px] text-green-600 font-bold uppercase">✨ New state discovered!</p>
+
+                      {constructionPhase === 'selecting' ? (
+                        <div className="space-y-3 bg-white p-3 border border-blue-200 rounded">
+                          <p className="text-[10px] font-bold uppercase opacity-60">Select the target NFA states:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {nfa.states.map(stateId => (
+                              <button
+                                key={stateId}
+                                onClick={() => {
+                                  setUserSelectedStates(prev => 
+                                    prev.includes(stateId) 
+                                      ? prev.filter(s => s !== stateId) 
+                                      : [...prev, stateId]
+                                  );
+                                }}
+                                className={`px-3 py-1 rounded text-xs font-mono border transition-all ${
+                                  userSelectedStates.includes(stateId)
+                                    ? 'bg-[#141414] text-white border-[#141414]'
+                                    : 'bg-white text-[#141414] border-gray-200 hover:border-[#141414]'
+                                }`}
+                              >
+                                {stateId}
+                              </button>
+                            ))}
+                          </div>
+                          <button
+                            onClick={checkSelection}
+                            className="w-full bg-blue-600 text-white py-2 text-[10px] font-bold uppercase rounded hover:bg-blue-700 transition-colors"
+                          >
+                            Check Selection
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="bg-white px-2 py-1 rounded border border-blue-200 font-mono">
+                            ∪ δ(q, {currentStep.symbol}) = {currentStep.nextDFAId || '∅'}
+                          </div>
+                          {currentStep.isNew && (
+                            <span className="text-[10px] text-green-600 font-bold uppercase">✨ New state!</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
