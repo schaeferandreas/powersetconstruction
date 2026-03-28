@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Trash2, Play, ChevronRight, RotateCcw, Info, Settings2, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, Play, ChevronRight, RotateCcw, Info, Settings2, Download, Upload, Sigma } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NFA, DFA, DFAState, DFATransition, StateId, Symbol } from './types';
 import { powersetConstruction, getDFAStateId, getNextNFAStates, isFinalDFAState } from './lib/powerset';
@@ -25,6 +25,8 @@ const DEFAULT_NFA: NFA = {
 export default function App() {
   const [nfa, setNfa] = useState<NFA>(DEFAULT_NFA);
   const [activeTab, setActiveTab] = useState<'edit' | 'construct' | 'result'>('edit');
+  const [showAddSymbolInput, setShowAddSymbolInput] = useState(false);
+  const [newSymbolValue, setNewSymbolValue] = useState('');
   
   // Construction state
   const [dfaStates, setDfaStates] = useState<DFAState[]>([]);
@@ -142,13 +144,34 @@ export default function App() {
   };
 
   const addSymbol = () => {
-    const sym = prompt("Enter new alphabet symbol:");
-    if (sym && !nfa.alphabet.includes(sym)) {
+    if (newSymbolValue && !nfa.alphabet.includes(newSymbolValue)) {
       setNfa(prev => ({
         ...prev,
-        alphabet: [...prev.alphabet, sym]
+        alphabet: [...prev.alphabet, newSymbolValue]
       }));
+      setNewSymbolValue('');
+      setShowAddSymbolInput(false);
     }
+  };
+
+  const removeSymbol = (sym: string) => {
+    setNfa(prev => {
+      const newAlphabet = prev.alphabet.filter(s => s !== sym);
+      const newTransitions = { ...prev.transitions };
+      
+      // Remove transitions for this symbol from all states
+      Object.keys(newTransitions).forEach(stateId => {
+        const stateTransitions = { ...newTransitions[stateId] };
+        delete stateTransitions[sym];
+        newTransitions[stateId] = stateTransitions;
+      });
+
+      return {
+        ...prev,
+        alphabet: newAlphabet,
+        transitions: newTransitions
+      };
+    });
   };
 
   const toggleTransition = (from: string, sym: string, to: string) => {
@@ -211,7 +234,6 @@ export default function App() {
                   <h2 className="font-serif italic text-lg">States & Alphabet</h2>
                   <div className="flex gap-2">
                     <button onClick={addState} className="p-1 hover:bg-gray-100 rounded border border-gray-200" title="Add State"><Plus size={16} /></button>
-                    <button onClick={addSymbol} className="p-1 hover:bg-gray-100 rounded border border-gray-200" title="Add Symbol"><Settings2 size={16} /></button>
                   </div>
                 </div>
                 
@@ -229,11 +251,54 @@ export default function App() {
                   </div>
                   
                   <div>
-                    <label className="text-[10px] uppercase font-bold opacity-50 block mb-2">Alphabet</label>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-[10px] uppercase font-bold opacity-50 block">Alphabet</label>
+                      <button 
+                        onClick={() => setShowAddSymbolInput(!showAddSymbolInput)} 
+                        className="p-1 hover:bg-gray-100 rounded border border-gray-200 flex items-center justify-center" 
+                        title="Add Symbol"
+                      >
+                        <div className="relative flex items-center justify-center w-4 h-4">
+                          <Sigma size={14} />
+                          <Plus size={8} className="absolute -top-1 -right-1 text-[#141414] font-bold" />
+                        </div>
+                      </button>
+                    </div>
+                    
+                    <AnimatePresence>
+                      {showAddSymbolInput && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="mb-3 overflow-hidden"
+                        >
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              value={newSymbolValue}
+                              onChange={(e) => setNewSymbolValue(e.target.value)}
+                              placeholder="Enter symbol (e.g. 'c')"
+                              className="flex-1 text-xs px-2 py-1 border border-gray-200 rounded focus:outline-none focus:border-[#141414]"
+                              onKeyDown={(e) => e.key === 'Enter' && addSymbol()}
+                              autoFocus
+                            />
+                            <button 
+                              onClick={addSymbol}
+                              className="px-3 py-1 bg-[#141414] text-[#E4E3E0] text-[10px] font-bold uppercase rounded"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     <div className="flex flex-wrap gap-2">
                       {nfa.alphabet.map(s => (
-                        <div key={s} className="bg-gray-50 border border-gray-200 px-2 py-1 rounded text-xs font-mono">
-                          {s}
+                        <div key={s} className="flex items-center gap-1 bg-gray-50 border border-gray-200 px-2 py-1 rounded text-xs font-mono">
+                          <span>{s}</span>
+                          <button onClick={() => removeSymbol(s)} className="text-red-500 hover:text-red-700 ml-1"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -420,7 +485,7 @@ export default function App() {
 
         {/* Right Column: Visualization */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] min-h-[500px] flex flex-col">
+          <div className="bg-white p-6 border border-[#141414] shadow-[4px_4px_0px_0px_rgba(20,20,20,1)] min-h-[700px] flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif italic text-xl">Visualization</h2>
               <div className="flex items-center gap-4 text-[10px] font-bold uppercase opacity-50">
@@ -429,48 +494,53 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex-1 grid grid-rows-2 gap-6">
-              <div className="space-y-2">
+            <div className="flex-1 flex flex-col gap-6 min-w-0 overflow-hidden">
+              <div className="flex-1 flex flex-col min-w-0 space-y-2">
                 <h3 className="text-[10px] uppercase font-bold opacity-50">NFA (Input)</h3>
-                <AutomatonGraph 
-                  states={nfa.states}
-                  transitions={Object.entries(nfa.transitions).flatMap(([from, syms]) => 
-                    Object.entries(syms).flatMap(([sym, tos]) => 
-                      tos.map(to => ({ from, to, label: sym }))
-                    )
-                  )}
-                  highlightedStates={useMemo(() => {
-                    if (!currentStep) return [];
-                    const currentState = dfaStates.find(s => s.id === currentStep.stateId);
-                    return currentState ? currentState.nfaStates : [];
-                  }, [currentStep, dfaStates])}
-                  highlightedTransitions={useMemo(() => {
-                    if (!currentStep) return [];
-                    const currentState = dfaStates.find(s => s.id === currentStep.stateId);
-                    if (!currentState) return [];
-                    
-                    return currentState.nfaStates.flatMap(from => {
-                      const targets = nfa.transitions[from]?.[currentStep.symbol] || [];
-                      return targets.map(to => ({ from, to, label: currentStep.symbol }));
-                    });
-                  }, [currentStep, dfaStates, nfa.transitions])}
-                  startStates={nfa.startStates}
-                  finalStates={nfa.finalStates}
-                  height={250}
-                />
+                <div className="flex-1 min-h-0 min-w-0">
+                  <AutomatonGraph 
+                    states={nfa.states}
+                    transitions={Object.entries(nfa.transitions).flatMap(([from, syms]) => 
+                      Object.entries(syms).flatMap(([sym, tos]) => 
+                        tos.map(to => ({ from, to, label: sym }))
+                      )
+                    )}
+                    highlightedStates={useMemo(() => {
+                      if (!currentStep) return [];
+                      const currentState = dfaStates.find(s => s.id === currentStep.stateId);
+                      return currentState ? currentState.nfaStates : [];
+                    }, [currentStep, dfaStates])}
+                    highlightedTransitions={useMemo(() => {
+                      if (!currentStep) return [];
+                      const currentState = dfaStates.find(s => s.id === currentStep.stateId);
+                      if (!currentState) return [];
+                      
+                      return currentState.nfaStates.flatMap(from => {
+                        const targets = nfa.transitions[from]?.[currentStep.symbol] || [];
+                        return targets.map(to => ({ from, to, label: currentStep.symbol }));
+                      });
+                    }, [currentStep, dfaStates, nfa.transitions])}
+                    startStates={nfa.startStates}
+                    finalStates={nfa.finalStates}
+                    height={325}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="flex-1 flex flex-col min-w-0 space-y-2">
                 <h3 className="text-[10px] uppercase font-bold opacity-50">DFA (Construction)</h3>
-                <AutomatonGraph 
-                  states={dfaStates.map(s => s.id)}
-                  transitions={dfaTransitions.map(t => ({ from: t.from, to: t.to, label: t.symbol }))}
-                  highlightedStates={currentStep ? [currentStep.stateId] : []}
-                  highlightedTransitions={currentStep ? [{ from: currentStep.stateId, to: currentStep.nextDFAId, label: currentStep.symbol }] : []}
-                  startStates={dfaStates.filter(s => s.isStart).map(s => s.id)}
-                  finalStates={dfaStates.filter(s => s.isFinal).map(s => s.id)}
-                  height={250}
-                />
+                <div className="flex-1 min-h-0 min-w-0">
+                  <AutomatonGraph 
+                    states={dfaStates.map(s => s.id)}
+                    transitions={dfaTransitions.map(t => ({ from: t.from, to: t.to, label: t.symbol }))}
+                    highlightedStates={currentStep ? [currentStep.stateId] : []}
+                    highlightedTransitions={currentStep ? [{ from: currentStep.stateId, to: currentStep.nextDFAId, label: currentStep.symbol }] : []}
+                    startStates={dfaStates.filter(s => s.isStart).map(s => s.id)}
+                    finalStates={dfaStates.filter(s => s.isFinal).map(s => s.id)}
+                    height={325}
+                    labelPosition="bottom"
+                  />
+                </div>
               </div>
             </div>
           </div>

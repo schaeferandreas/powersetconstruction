@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { StateId, Symbol } from '../types';
 
@@ -31,6 +31,7 @@ interface AutomatonGraphProps {
   highlightedTransitions?: { from: string; to: string; label: string }[];
   width?: number;
   height?: number;
+  labelPosition?: 'inside' | 'top' | 'bottom';
 }
 
 const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
@@ -42,22 +43,38 @@ const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
   highlightedTransitions = [],
   width = 600,
   height = 400,
+  labelPosition = 'inside',
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(width);
+  const simulationRef = useRef<d3.Simulation<Node, Link> | null>(null);
+  const nodesRef = useRef<Node[]>([]);
+  const linksRef = useRef<Link[]>([]);
+  const lastStructureRef = useRef<string>("");
+
+  // Handle responsive width
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(entries => {
+      if (entries[0]) {
+        const newWidth = entries[0].contentRect.width;
+        if (newWidth > 0) {
+          setContainerWidth(newWidth);
+        }
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
-
-    const nodes: Node[] = states.map(id => ({
-      id,
-      isStart: startStates.includes(id),
-      isFinal: finalStates.includes(id),
-      isHighlighted: highlightedStates.includes(id)
-    }));
-
+    const currentWidth = containerWidth;
+    const currentHeight = height;
+    
     // Group transitions by source and target to combine labels
     const groupedTransitions: Record<string, string[]> = {};
     transitions.forEach(t => {
@@ -65,6 +82,25 @@ const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
       if (!groupedTransitions[key]) groupedTransitions[key] = [];
       groupedTransitions[key].push(t.label);
     });
+
+    // Preserve node objects to keep positions and simulation state
+    const nodes: Node[] = states.map(id => {
+      let node = nodesRef.current.find(n => n.id === id);
+      if (!node) {
+        node = { 
+          id, 
+          isStart: false, 
+          isFinal: false,
+          x: currentWidth / 2 + (Math.random() - 0.5) * 40,
+          y: currentHeight / 2 + (Math.random() - 0.5) * 40
+        } as Node;
+      }
+      node.isStart = startStates.includes(id);
+      node.isFinal = finalStates.includes(id);
+      node.isHighlighted = highlightedStates.includes(id);
+      return node;
+    });
+    nodesRef.current = nodes;
 
     const links: Link[] = Object.entries(groupedTransitions).map(([key, labels]) => {
       const [from, to] = key.split("->");
@@ -75,20 +111,83 @@ const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
       // Check if there is a reverse link
       const hasReverse = from !== to && groupedTransitions[`${to}->${from}`] !== undefined;
       
-      return {
-        source: from,
-        target: to,
-        label: labels.join(", "),
-        isHighlighted,
-        hasReverse
-      };
+      let link = linksRef.current.find(l => {
+        const lSourceId = typeof l.source === 'object' ? (l.source as Node).id : l.source;
+        const lTargetId = typeof l.target === 'object' ? (l.target as Node).id : l.target;
+        return lSourceId === from && lTargetId === to;
+      });
+
+      if (!link) {
+        link = { source: from, target: to, label: "", isHighlighted: false, hasReverse: false } as Link;
+      }
+      
+      link.label = labels.join(", ");
+      link.isHighlighted = isHighlighted;
+      link.hasReverse = hasReverse;
+      
+      return link;
     });
+    linksRef.current = links;
+
+    const structureKey = JSON.stringify({ 
+      states: [...states].sort(), 
+      transitions: [...transitions].sort((a, b) => `${a.from}${a.to}${a.label}`.localeCompare(`${b.from}${b.to}${b.label}`)),
+      startStates: [...startStates].sort(),
+      finalStates: [...finalStates].sort(),
+      width: currentWidth,
+      height: currentHeight
+    });
+    
+    const structureChanged = structureKey !== lastStructureRef.current;
+    lastStructureRef.current = structureKey;
+
+    if (!structureChanged && simulationRef.current) {
+      // Update center force if width changed
+      simulationRef.current.force("center", d3.forceCenter(currentWidth / 2, currentHeight / 2));
+      simulationRef.current.alpha(0.3).restart();
+      // Just update visual attributes of existing elements
+      svg.selectAll<SVGPathElement, Link>(".link")
+        .data(links)
+        .transition()
+        .duration(200)
+        .attr("stroke", d => d.isHighlighted ? "#ef4444" : "#999")
+        .attr("stroke-width", d => d.isHighlighted ? 4 : 2)
+        .attr("marker-end", d => d.isHighlighted ? "url(#arrowhead-highlight)" : "url(#arrowhead)");
+
+      svg.selectAll<SVGTextElement, Link>(".link-labels text")
+        .data(links)
+        .transition()
+        .duration(200)
+        .attr("fill", d => d.isHighlighted ? "#ef4444" : "#333")
+        .attr("font-weight", d => d.isHighlighted ? "bold" : "normal")
+        .text(d => d.label);
+
+      svg.selectAll<SVGGElement, Node>(".node")
+        .data(nodes)
+        .each(function(d) {
+          const g = d3.select(this);
+          g.select("circle:last-of-type") // Main circle
+            .transition()
+            .duration(200)
+            .attr("fill", d.isHighlighted ? "#fee2e2" : (d.isStart ? "#e0f2fe" : "#fff"))
+            .attr("stroke", d.isHighlighted ? "#ef4444" : (d.isStart ? "#0369a1" : "#333"))
+            .attr("stroke-width", d.isHighlighted ? 3 : 2);
+        });
+      
+      return;
+    }
+
+    // Full re-initialization if structure changed
+    if (simulationRef.current) simulationRef.current.stop();
+    svg.selectAll("*").remove();
 
     const simulation = d3.forceSimulation<Node>(nodes)
       .force("link", d3.forceLink<Node, Link>(links).id(d => d.id).distance(150))
       .force("charge", d3.forceManyBody().strength(-300))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(50));
+      .force("center", d3.forceCenter(currentWidth / 2, currentHeight / 2))
+      .force("collision", d3.forceCollide().radius(labelPosition === 'inside' ? 50 : 80));
+    
+    simulationRef.current = simulation;
 
     // Arrowhead markers
     const defs = svg.append("defs");
@@ -177,13 +276,34 @@ const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
       .attr("marker-end", "url(#arrowhead)");
 
     node.append("text")
-      .attr("dy", ".35em")
+      .attr("dy", labelPosition === 'inside' ? ".35em" : (labelPosition === 'top' ? "-45px" : "45px"))
       .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
+      .attr("font-size", labelPosition === 'inside' ? "12px" : "11px")
       .attr("font-weight", "bold")
+      .attr("stroke", "#E4E3E0")
+      .attr("stroke-width", 4)
+      .attr("stroke-linejoin", "round")
+      .attr("opacity", labelPosition === 'inside' ? 0 : 0.9)
+      .text(d => d.id);
+
+    node.append("text")
+      .attr("dy", labelPosition === 'inside' ? ".35em" : (labelPosition === 'top' ? "-45px" : "45px"))
+      .attr("text-anchor", "middle")
+      .attr("font-size", labelPosition === 'inside' ? "12px" : "11px")
+      .attr("font-weight", "bold")
+      .attr("fill", "#141414")
       .text(d => d.id);
 
     simulation.on("tick", () => {
+      // Keep nodes within bounds to prevent clipping of loops and labels
+      nodes.forEach(node => {
+        const margin = 40;
+        if (node.x! < margin) node.x = margin;
+        if (node.x! > currentWidth - margin) node.x = currentWidth - margin;
+        if (node.y! < margin) node.y = margin;
+        if (node.y! > currentHeight - margin) node.y = currentHeight - margin;
+      });
+
       link.attr("d", d => {
         const source = d.source as Node;
         const target = d.target as Node;
@@ -282,13 +402,13 @@ const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
     }
 
     return () => {
-      simulation.stop();
+      if (simulationRef.current) simulationRef.current.stop();
     };
-  }, [states, transitions, startStates, finalStates, highlightedStates, highlightedTransitions, width, height]);
+  }, [states, transitions, startStates, finalStates, highlightedStates, highlightedTransitions, height, labelPosition, containerWidth]);
 
   return (
-    <div className="border rounded-lg bg-white overflow-hidden shadow-inner">
-      <svg ref={svgRef} width={width} height={height} />
+    <div ref={containerRef} className="border rounded-lg bg-white overflow-hidden shadow-inner w-full">
+      <svg ref={svgRef} width={containerWidth} height={height} />
     </div>
   );
 };
