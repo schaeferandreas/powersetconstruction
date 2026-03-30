@@ -44,7 +44,17 @@ const resources = {
       "incorrect_feedback": "Incorrect selection. Try again.",
       "reset": "Reset",
       "empty_set": "∅",
-      "language": "Language"
+      "language": "Language",
+      "simulation": "Simulation",
+      "simulation_word": "Word to simulate",
+      "simulation_placeholder": "Enter word (e.g. 'abb')",
+      "step_forward": "Step Forward",
+      "step_backward": "Step Backward",
+      "reset_simulation": "Reset Simulation",
+      "current_step": "Current Step",
+      "word_accepted": "Word Accepted!",
+      "word_rejected": "Word Rejected",
+      "invalid_symbols": "Invalid symbols in word"
     }
   },
   de: {
@@ -88,7 +98,17 @@ const resources = {
       "incorrect_feedback": "Falsche Auswahl. Versuchen Sie es erneut.",
       "reset": "Zurücksetzen",
       "empty_set": "∅",
-      "language": "Sprache"
+      "language": "Sprache",
+      "simulation": "Simulation",
+      "simulation_word": "Wort simulieren",
+      "simulation_placeholder": "Wort eingeben (z.B. 'abb')",
+      "step_forward": "Schritt vor",
+      "step_backward": "Schritt zurück",
+      "reset_simulation": "Simulation zurücksetzen",
+      "current_step": "Aktueller Schritt",
+      "word_accepted": "Wort akzeptiert!",
+      "word_rejected": "Wort abgelehnt",
+      "invalid_symbols": "Ungültige Symbole im Wort"
     }
   }
 };

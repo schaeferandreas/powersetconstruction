@@ -280,17 +280,6 @@ const AutomatonGraph: React.FC<AutomatonGraphProps> = ({
       .attr("text-anchor", "middle")
       .attr("font-size", labelPosition === 'inside' ? "12px" : "11px")
       .attr("font-weight", "bold")
-      .attr("stroke", "#E4E3E0")
-      .attr("stroke-width", 4)
-      .attr("stroke-linejoin", "round")
-      .attr("opacity", labelPosition === 'inside' ? 0 : 0.9)
-      .text(d => d.id);
-
-    node.append("text")
-      .attr("dy", labelPosition === 'inside' ? ".35em" : (labelPosition === 'top' ? "-45px" : "45px"))
-      .attr("text-anchor", "middle")
-      .attr("font-size", labelPosition === 'inside' ? "12px" : "11px")
-      .attr("font-weight", "bold")
       .attr("fill", "#141414")
       .text(d => d.id);
 

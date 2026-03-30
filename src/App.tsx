@@ -46,6 +46,10 @@ export default function App() {
     isNew: boolean;
   } | null>(null);
 
+  // Simulation state
+  const [simWord, setSimWord] = useState('');
+  const [simStep, setSimStep] = useState(0);
+
   const resetConstruction = () => {
     const startNFAStates = nfa.startStates.slice().sort();
     const startDFAId = getDFAStateId(startNFAStates);
@@ -145,7 +149,51 @@ export default function App() {
     setConstructionPhase('idle');
     setFeedback(null);
     setUserSelectedStates([]);
+    setSimStep(0);
   };
+
+  const simPath = useMemo(() => {
+    if (!dfaStates.length) return [];
+    
+    const startState = dfaStates.find(s => s.isStart);
+    if (!startState) return [];
+    
+    let currentId = startState.id;
+    const path = [currentId];
+    
+    for (const char of simWord) {
+      const transition = dfaTransitions.find(t => t.from === currentId && t.symbol === char);
+      if (transition) {
+        currentId = transition.to;
+        path.push(currentId);
+      } else {
+        // If it's a valid symbol but no transition, it might go to the empty set state if it exists
+        const emptySetId = getDFAStateId([]);
+        if (nfa.alphabet.includes(char) && dfaStates.some(s => s.id === emptySetId)) {
+          currentId = emptySetId;
+          path.push(currentId);
+        } else {
+          break;
+        }
+      }
+    }
+    return path;
+  }, [simWord, dfaStates, dfaTransitions, nfa.alphabet]);
+
+  const currentSimDFAState = simPath[simStep];
+  const currentSimNFAStates = useMemo(() => {
+    if (!currentSimDFAState) return [];
+    return dfaStates.find(s => s.id === currentSimDFAState)?.nfaStates || [];
+  }, [currentSimDFAState, dfaStates]);
+
+  const isWordValid = useMemo(() => {
+    return Array.from(simWord).every(char => nfa.alphabet.includes(char));
+  }, [simWord, nfa.alphabet]);
+
+  const isWordAccepted = useMemo(() => {
+    if (simStep !== simWord.length || !currentSimDFAState) return false;
+    return dfaStates.find(s => s.id === currentSimDFAState)?.isFinal || false;
+  }, [simStep, simWord.length, currentSimDFAState, dfaStates]);
 
   // NFA Editor helpers
   const addState = () => {
@@ -554,6 +602,79 @@ export default function App() {
           {activeTab === 'result' && (
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
               <section className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="font-serif italic text-lg mb-4 text-th-dunkelblau">{t('simulation')}</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold opacity-50 block mb-2">{t('simulation_word')}</label>
+                    <input 
+                      type="text"
+                      value={simWord}
+                      onChange={(e) => {
+                        setSimWord(e.target.value);
+                        setSimStep(0);
+                      }}
+                      placeholder={t('simulation_placeholder')}
+                      className={`w-full text-xs px-3 py-2 border rounded focus:outline-none transition-colors ${!isWordValid && simWord ? 'border-th-rot bg-th-rot/5' : 'border-th-sand/30 focus:border-th-rot'}`}
+                    />
+                    {!isWordValid && simWord && (
+                      <p className="text-[10px] text-th-rot font-bold mt-1 uppercase">{t('invalid_symbols')}</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setSimStep(prev => Math.max(0, prev - 1))}
+                      disabled={simStep === 0}
+                      className="flex-1 bg-th-white border border-th-black py-2 px-4 text-[10px] font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30 hover:bg-th-sand/10 transition-colors"
+                    >
+                      {t('step_backward')}
+                    </button>
+                    <button 
+                      onClick={() => setSimStep(prev => Math.min(simWord.length, prev + 1))}
+                      disabled={simStep >= simWord.length || simStep >= simPath.length - 1}
+                      className="flex-1 bg-th-rot text-th-white py-2 px-4 text-[10px] font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-30 hover:bg-th-rot/90 transition-colors"
+                    >
+                      {t('step_forward')}
+                    </button>
+                  </div>
+
+                  <button 
+                    onClick={() => setSimStep(0)}
+                    className="w-full bg-th-white border border-th-black py-2 px-4 text-[10px] font-bold uppercase flex items-center justify-center gap-2 hover:bg-th-sand/10 transition-colors"
+                  >
+                    <RotateCcw size={14} /> {t('reset_simulation')}
+                  </button>
+
+                  <div className="pt-4 border-t border-dashed border-th-sand/30">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] uppercase font-bold opacity-50">{t('current_step')}</span>
+                      <span className="text-xs font-mono font-bold">{simStep} / {simWord.length}</span>
+                    </div>
+                    <div className="flex gap-1 overflow-x-auto pb-2">
+                      {Array.from(simWord).map((char, i) => (
+                        <span 
+                          key={i} 
+                          className={`flex-shrink-0 w-6 h-8 flex items-center justify-center border font-mono text-sm transition-colors ${i < simStep ? 'bg-th-dunkelblau text-th-white border-th-dunkelblau' : i === simStep ? 'bg-th-rot text-th-white border-th-rot animate-pulse' : 'bg-th-white border-th-sand/30'}`}
+                        >
+                          {char}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {simStep === simWord.length && simWord.length > 0 && (
+                    <motion.div 
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className={`p-4 border-2 text-center font-bold uppercase tracking-widest ${isWordAccepted ? 'bg-th-mint/10 border-th-mint text-th-grau' : 'bg-th-rot/10 border-th-rot text-th-rot'}`}
+                    >
+                      {isWordAccepted ? t('word_accepted') : t('word_rejected')}
+                    </motion.div>
+                  )}
+                </div>
+              </section>
+
+              <section className="bg-th-white p-6 border border-th-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <h2 className="font-serif italic text-lg mb-4 text-th-dunkelblau">{t('dfa_summary')}</h2>
                 <div className="space-y-4 text-xs">
                   <div className="flex justify-between">
@@ -604,11 +725,23 @@ export default function App() {
                       )
                     )}
                     highlightedStates={useMemo(() => {
+                      if (activeTab === 'result') return currentSimNFAStates;
                       if (!currentStep) return [];
                       const currentState = dfaStates.find(s => s.id === currentStep.stateId);
                       return currentState ? currentState.nfaStates : [];
-                    }, [currentStep, dfaStates])}
+                    }, [activeTab, currentSimNFAStates, currentStep, dfaStates])}
                     highlightedTransitions={useMemo(() => {
+                      if (activeTab === 'result') {
+                        if (simStep === 0 || !simPath[simStep-1]) return [];
+                        const prevDFAStateId = simPath[simStep-1];
+                        const prevNFAStates = dfaStates.find(s => s.id === prevDFAStateId)?.nfaStates || [];
+                        const symbol = simWord[simStep-1];
+                        
+                        return prevNFAStates.flatMap(from => {
+                          const targets = nfa.transitions[from]?.[symbol] || [];
+                          return targets.map(to => ({ from, to, label: symbol }));
+                        });
+                      }
                       if (!currentStep) return [];
                       const currentState = dfaStates.find(s => s.id === currentStep.stateId);
                       if (!currentState) return [];
@@ -617,7 +750,7 @@ export default function App() {
                         const targets = nfa.transitions[from]?.[currentStep.symbol] || [];
                         return targets.map(to => ({ from, to, label: currentStep.symbol }));
                       });
-                    }, [currentStep, dfaStates, nfa.transitions])}
+                    }, [activeTab, simStep, simPath, dfaStates, simWord, currentStep, nfa.transitions])}
                     startStates={nfa.startStates}
                     finalStates={nfa.finalStates}
                     height={325}
@@ -631,8 +764,17 @@ export default function App() {
                   <AutomatonGraph 
                     states={dfaStates.map(s => s.id)}
                     transitions={dfaTransitions.map(t => ({ from: t.from, to: t.to, label: t.symbol }))}
-                    highlightedStates={currentStep ? [currentStep.stateId] : []}
-                    highlightedTransitions={currentStep ? [{ from: currentStep.stateId, to: currentStep.nextDFAId, label: currentStep.symbol }] : []}
+                    highlightedStates={useMemo(() => {
+                      if (activeTab === 'result') return currentSimDFAState ? [currentSimDFAState] : [];
+                      return currentStep ? [currentStep.stateId] : [];
+                    }, [activeTab, currentSimDFAState, currentStep])}
+                    highlightedTransitions={useMemo(() => {
+                      if (activeTab === 'result') {
+                        if (simStep === 0 || !simPath[simStep-1] || !simPath[simStep]) return [];
+                        return [{ from: simPath[simStep-1], to: simPath[simStep], label: simWord[simStep-1] }];
+                      }
+                      return currentStep ? [{ from: currentStep.stateId, to: currentStep.nextDFAId, label: currentStep.symbol }] : [];
+                    }, [activeTab, simStep, simPath, simWord, currentStep])}
                     startStates={dfaStates.filter(s => s.isStart).map(s => s.id)}
                     finalStates={dfaStates.filter(s => s.isFinal).map(s => s.id)}
                     height={325}
